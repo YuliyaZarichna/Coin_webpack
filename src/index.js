@@ -1,6 +1,6 @@
 import _ from "lodash";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import omo_base from "./textures/omo_base.jpg";
 import omo_bump from "./textures/omo_bump.jpg";
 import omo_displacement from "./textures/omo_displacement.jpg";
@@ -146,27 +146,18 @@ window.onload = function () {
   controls.touches = {
     ONE: THREE.TOUCH.ROTATE,
   };
-  controls.enabled = true;
   controls.enableZoom = false;
-  controls.enableRotate = true;
 
   controls.minPolarAngle = Math.PI / 2;
   controls.maxPolarAngle = Math.PI / 2;
 
   function onDocumentMouseDown(event) {
     console.log("mouse down");
-    event.preventDefault();
-    controls.enabled = true;
-    controls.enableRotate = true;
-
-    // controls.enabled = !controls.enabled;
     start = new Date();
   }
 
   function onDocumentMouseUp(event) {
     console.log("mouse up");
-    event.preventDefault();
-    //controls.enabled = false;
     end = new Date();
     delta = (end - start) / 1000.0;
     if (delta < clickDuration) {
@@ -177,8 +168,6 @@ window.onload = function () {
   }
 
   function onDocumentMouseMove(event) {
-    // console.log("mouse move");
-    event.preventDefault();
     raycaster.setFromCamera(mouse, camera);
     intersects = raycaster.intersectObjects([mesh]);
     var canvas = document.getElementById("canvas");
@@ -236,10 +225,8 @@ window.onload = function () {
   }
 
   function handleClick() {
-    console.log("click function");
     raycaster.setFromCamera(mouse, camera);
     intersects = raycaster.intersectObjects([mesh]);
-    //controls.enabled = false;
 
     if (intersects.length === 0) {
       console.log("return");
@@ -257,9 +244,9 @@ window.onload = function () {
     }
   }
 
-  document.addEventListener("mousedown", onDocumentMouseDown, false);
-  document.addEventListener("mouseup", onDocumentMouseUp, false);
-  document.addEventListener("mousemove", onDocumentMouseMove, false);
+  document.addEventListener("pointerdown", onDocumentMouseDown, false);
+  document.addEventListener("pointerup", onDocumentMouseUp, false);
+  document.addEventListener("pointermove", onDocumentMouseMove, false);
   document.addEventListener("touchstart", onDocumentTouchStart, false);
   document.addEventListener("touchend", onDocumentTouchEnd, false);
   // document.addEventListener("click", handleClick, false);
