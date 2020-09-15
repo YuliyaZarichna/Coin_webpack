@@ -11,11 +11,10 @@ import "./about.html";
 import "./projects.html";
 import "./style.css";
 
-var camera, canvas, scene, renderer, mesh, controls;
+var camera, canvas, scene, renderer, mesh, controls, hemiLight, spotLight;
 var numberOfVerticies = 100;
 var coinWidth = 5;
 var coinThikness = 0.2;
-var color = new THREE.Color("#A9A9ff");
 var resized = false;
 var marginLeft = document.getElementById("container").offsetLeft;
 var marginTop = document.getElementById("container").offsetTop;
@@ -28,18 +27,29 @@ function init() {
     alpha: true,
   });
 
-  camera = new THREE.PerspectiveCamera(40, 2, 1, 1000);
+  renderer.toneMapping = THREE.ReinhardToneMapping;
+  renderer.toneMappingExposure = 2.5;
+  camera = new THREE.PerspectiveCamera(40, 2, 0.1, 100);
 
   camera.position.z = 9;
   camera.position.set(15, 0, 10);
 
   scene = new THREE.Scene();
 
-  var ambientLight = new THREE.AmbientLight(0xcccccc, 1);
+  /*  var ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
   scene.add(ambientLight);
 
-  var directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-  scene.add(directionalLight);
+  var directionalLight = new THREE.DirectionalLight(0x000000, 0.5);
+  scene.add(directionalLight); */
+
+  hemiLight = new THREE.HemisphereLight(0xdddcdb, 0x39394d, 4);
+
+  scene.add(hemiLight);
+
+  (spotLight = new THREE.SpotLight(0xdddcdb, 1)),
+    spotLight.position.set(-50, 50, 50);
+  // spotLight.castShadow = true;
+  scene.add(spotLight);
 
   scene.add(camera);
 
@@ -51,12 +61,16 @@ function init() {
   );
 
   var textureLoader = new THREE.TextureLoader();
+  const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 
   var textureFront = textureLoader.load(omo_base);
+  textureFront.anisotropy = maxAnisotropy;
+
   var textureBack = textureLoader.load(projects_base);
   textureBack.wrapS = THREE.RepeatWrapping;
   textureBack.repeat.x = -1;
   textureBack.flipY = false;
+  textureBack.anisotropy = maxAnisotropy;
 
   var bumpFront = textureLoader.load(omo_bump);
   var bumpBack = textureLoader.load(projects_bump);
@@ -68,22 +82,28 @@ function init() {
   var displacementBack = textureLoader.load(projects_displacement);
 
   var coinMaterials = [
-    new THREE.MeshPhongMaterial({ color: 0xcccccc }),
-    new THREE.MeshPhongMaterial({
+    new THREE.MeshStandardMaterial({ color: 0xcccccc }),
+    new THREE.MeshStandardMaterial({
       map: textureBack,
       bumpMap: bumpBack,
-      bumpScale: 0.2,
+      bumpScale: 0.1,
       displacementMap: displacementBack,
       displacementScale: 0.01,
       displacementBias: 0.01,
+      roughness: 0.5,
+      metalness: 0.5,
+
+      //color: 0xffffff,
     }),
-    new THREE.MeshPhongMaterial({
+    new THREE.MeshStandardMaterial({
       map: textureFront,
       bumpMap: bumpFront,
-      bumpScale: 0.2,
+      bumpScale: 0.1,
       displacementMap: displacementFont,
       displacementScale: 0.01,
-      displacementBias: 0,
+      displacementBias: 0.01,
+      metalness: 0.5,
+      roughness: 0.5,
     }),
   ];
 
@@ -121,6 +141,11 @@ function animate() {
   requestAnimationFrame(animate);
   mesh.rotation.y += 0.008;
   renderer.render(scene, camera);
+  /*   spotLight.position.set(
+    camera.position.x + 10,
+    camera.position.y + 10,
+    camera.position.z + 10
+  ); */
   if (resized) {
     resizeCanvasToDisplaySize();
   }
@@ -141,12 +166,12 @@ window.onload = function () {
   var clickDuration = 0.25;
 
   controls = new OrbitControls(camera, renderer.domElement);
-  console.log("controls", controls);
+  controls.update();
 
   controls.touches = {
     ONE: THREE.TOUCH.ROTATE,
   };
-  controls.enableZoom = false;
+  //controls.enableZoom = false;
 
   controls.minPolarAngle = Math.PI / 2;
   controls.maxPolarAngle = Math.PI / 2;

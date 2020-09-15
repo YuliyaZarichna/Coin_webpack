@@ -62,6 +62,6 @@ module.exports = {
       template: "src/style.css",
       filename: "[name].css",
     }),
-    new CleanWebpackPlugin(),
+    //  new CleanWebpackPlugin(),
   ],
 };
