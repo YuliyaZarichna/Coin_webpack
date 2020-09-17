@@ -11,16 +11,18 @@ import "./about.html";
 import "./projects.html";
 import "./style.css";
 
-var camera, canvas, scene, renderer, mesh, controls, hemiLight, spotLight;
-var numberOfVerticies = 100;
-var coinWidth = 5;
-var coinThikness = 0.2;
-var resized = false;
-var marginLeft = document.getElementById("container").offsetLeft;
-var marginTop = document.getElementById("container").offsetTop;
+function main() {
+  var camera, canvas, scene, renderer, coin, controls, hemiLight, spotLight;
+  var numberOfVerticies = 100;
+  var coinWidth = 5;
+  var coinThikness = 0.2;
+  var marginLeft = document.getElementById("container").offsetLeft;
+  var marginTop = document.getElementById("container").offsetTop;
 
-function init() {
+  var cubes = []; // just an array we can use to rotate the cubes
+
   canvas = document.querySelector("#container canvas");
+
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true,
@@ -29,58 +31,49 @@ function init() {
 
   renderer.toneMapping = THREE.ReinhardToneMapping;
   renderer.toneMappingExposure = 2.5;
-  camera = new THREE.PerspectiveCamera(40, 2, 0.1, 100);
 
+  camera = new THREE.PerspectiveCamera(40, 2, 0.1, 100);
   camera.position.z = 9;
   camera.position.set(15, 0, 10);
 
   scene = new THREE.Scene();
 
-  /*  var ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
-  scene.add(ambientLight);
-
-  var directionalLight = new THREE.DirectionalLight(0x000000, 0.5);
-  scene.add(directionalLight); */
-
   hemiLight = new THREE.HemisphereLight(0xdddcdb, 0x39394d, 4);
-
   scene.add(hemiLight);
 
   (spotLight = new THREE.SpotLight(0xdddcdb, 1)),
     spotLight.position.set(-50, 50, 50);
-  // spotLight.castShadow = true;
   scene.add(spotLight);
 
   scene.add(camera);
 
-  var coin = new THREE.CylinderGeometry(
+  var coinGeometry = new THREE.CylinderGeometry(
     coinWidth,
     coinWidth,
     coinThikness,
     numberOfVerticies
   );
-
-  var textureLoader = new THREE.TextureLoader();
+  var loadManager = new THREE.LoadingManager();
+  var loader = new THREE.TextureLoader(loadManager);
   const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 
-  var textureFront = textureLoader.load(omo_base);
+  var textureFront = loader.load(omo_base);
   textureFront.anisotropy = maxAnisotropy;
 
-  var textureBack = textureLoader.load(projects_base);
+  var textureBack = loader.load(projects_base);
   textureBack.wrapS = THREE.RepeatWrapping;
   textureBack.repeat.x = -1;
   textureBack.flipY = false;
   textureBack.anisotropy = maxAnisotropy;
 
-  var bumpFront = textureLoader.load(omo_bump);
-  var bumpBack = textureLoader.load(projects_bump);
+  var bumpFront = loader.load(omo_bump);
+  var bumpBack = loader.load(projects_bump);
   bumpBack.wrapS = THREE.RepeatWrapping;
   bumpBack.repeat.x = -1;
   bumpBack.flipY = false;
 
-  var displacementFont = textureLoader.load(omo_displacement);
-  var displacementBack = textureLoader.load(projects_displacement);
-
+  var displacementFont = loader.load(omo_displacement);
+  var displacementBack = loader.load(projects_displacement);
   var coinMaterials = [
     new THREE.MeshStandardMaterial({ color: 0xcccccc }),
     new THREE.MeshStandardMaterial({
@@ -92,8 +85,6 @@ function init() {
       displacementBias: 0.01,
       roughness: 0.5,
       metalness: 0.5,
-
-      //color: 0xffffff,
     }),
     new THREE.MeshStandardMaterial({
       map: textureFront,
@@ -107,53 +98,39 @@ function init() {
     }),
   ];
 
-  mesh = new THREE.Mesh(coin, coinMaterials);
+  loadManager.onLoad = () => {
+    coin = new THREE.Mesh(coinGeometry, coinMaterials);
+    scene.add(coin);
+    coin.scale.set(-1, -1, 1);
+    coin.rotation.y = 1.57;
+    coin.rotation.z = 1.57;
+    cubes.push(coin);
+  };
 
-  scene.add(mesh);
-
-  mesh.scale.set(-1, -1, 1);
-
-  mesh.rotation.y = 1.57;
-  mesh.rotation.z = 1.57;
-
-  resizeCanvasToDisplaySize();
-
-  window.addEventListener("resize", () => {
-    resized = true;
-  });
-}
-
-function resizeCanvasToDisplaySize() {
-  console.log("resizeCanvasToDisplaySize");
-  resized = false;
-  const canvas = renderer.domElement;
-  const width = canvas.clientWidth;
-  const height = canvas.clientHeight;
-  if (canvas.width !== width || canvas.height !== height) {
-    // you must pass false here or three.js sadly fights the browser
-    renderer.setSize(width, height, false);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
+  function resizeRendererToDisplaySize(renderer) {
+    const canvas = renderer.domElement;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    const needResize = canvas.width !== width || canvas.height !== height;
+    if (needResize) {
+      renderer.setSize(width, height, false);
+    }
+    return needResize;
   }
-}
 
-function animate() {
-  requestAnimationFrame(animate);
-  mesh.rotation.y += 0.008;
-  renderer.render(scene, camera);
-  /*   spotLight.position.set(
-    camera.position.x + 10,
-    camera.position.y + 10,
-    camera.position.z + 10
-  ); */
-  if (resized) {
-    resizeCanvasToDisplaySize();
+  function render() {
+    cubes.forEach((coin) => {
+      coin.rotation.y += 0.008;
+    });
+    if (resizeRendererToDisplaySize(renderer)) {
+      const canvas = renderer.domElement;
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+    }
+    renderer.render(scene, camera);
+    requestAnimationFrame(render);
   }
-}
-
-window.onload = function () {
-  init();
-  animate();
+  requestAnimationFrame(render);
 
   var raycaster = new THREE.Raycaster();
   var mouse = new THREE.Vector2();
@@ -164,18 +141,16 @@ window.onload = function () {
   var end;
   var delta;
   var clickDuration = 0.25;
-
   controls = new OrbitControls(camera, renderer.domElement);
   controls.update();
 
   controls.touches = {
     ONE: THREE.TOUCH.ROTATE,
   };
-  //controls.enableZoom = false;
+  controls.enableZoom = false;
 
   controls.minPolarAngle = Math.PI / 2;
   controls.maxPolarAngle = Math.PI / 2;
-
   function onDocumentMouseDown(event) {
     console.log("mouse down");
     start = new Date();
@@ -194,7 +169,7 @@ window.onload = function () {
 
   function onDocumentMouseMove(event) {
     raycaster.setFromCamera(mouse, camera);
-    intersects = raycaster.intersectObjects([mesh]);
+    intersects = raycaster.intersectObjects([coin]);
     var canvas = document.getElementById("canvas");
     if (intersects.length > 0) {
       canvas.style.cursor = "pointer";
@@ -251,7 +226,7 @@ window.onload = function () {
 
   function handleClick() {
     raycaster.setFromCamera(mouse, camera);
-    intersects = raycaster.intersectObjects([mesh]);
+    intersects = raycaster.intersectObjects([coin]);
 
     if (intersects.length === 0) {
       console.log("return");
@@ -275,4 +250,6 @@ window.onload = function () {
   document.addEventListener("touchstart", onDocumentTouchStart, false);
   document.addEventListener("touchend", onDocumentTouchEnd, false);
   // document.addEventListener("click", handleClick, false);
-};
+}
+
+main();
