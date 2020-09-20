@@ -1,0 +1,11 @@
+git push origin --delete gh-pages 
+from master git subtree push --prefix dist origin gh-pages // to push to gh-pages
+
+
+1. open VC code editor and run ->
+    npm install
+
+2. right click on dist/index.html and choose "open with live server" -> it will open page in brouser
+
+3. to compile changes run ->
+    npm run build 

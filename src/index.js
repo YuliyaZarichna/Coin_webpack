@@ -29,8 +29,8 @@ function main() {
     alpha: true,
   });
 
-  renderer.toneMapping = THREE.ReinhardToneMapping;
-  renderer.toneMappingExposure = 2.5;
+  /*  renderer.toneMapping = THREE.ReinhardToneMapping;
+  renderer.toneMappingExposure = 2.5; */
 
   camera = new THREE.PerspectiveCamera(40, 2, 0.1, 100);
   camera.position.z = 9;
@@ -38,12 +38,21 @@ function main() {
 
   scene = new THREE.Scene();
 
-  hemiLight = new THREE.HemisphereLight(0xdddcdb, 0x39394d, 4);
+  /* hemiLight = new THREE.HemisphereLight(0xdddcdb, 0x39394d, 4);
   scene.add(hemiLight);
 
   (spotLight = new THREE.SpotLight(0xdddcdb, 1)),
     spotLight.position.set(-50, 50, 50);
-  scene.add(spotLight);
+  scene.add(spotLight); */
+  var directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  directionalLight.position.set(100, 350, 250);
+
+  scene.add(directionalLight);
+  camera.add(directionalLight);
+
+  var ambientLight = new THREE.AmbientLight(0xcccccc);
+  scene.add(ambientLight);
+  camera.add(ambientLight);
 
   scene.add(camera);
 
@@ -58,13 +67,13 @@ function main() {
   const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 
   var textureFront = loader.load(omo_base);
-  textureFront.anisotropy = maxAnisotropy;
+  //textureFront.anisotropy = maxAnisotropy;
 
   var textureBack = loader.load(projects_base);
   textureBack.wrapS = THREE.RepeatWrapping;
   textureBack.repeat.x = -1;
   textureBack.flipY = false;
-  textureBack.anisotropy = maxAnisotropy;
+  //textureBack.anisotropy = maxAnisotropy;
 
   var bumpFront = loader.load(omo_bump);
   var bumpBack = loader.load(projects_bump);
@@ -74,9 +83,10 @@ function main() {
 
   var displacementFont = loader.load(omo_displacement);
   var displacementBack = loader.load(projects_displacement);
+
   var coinMaterials = [
-    new THREE.MeshStandardMaterial({ color: 0xcccccc }),
-    new THREE.MeshStandardMaterial({
+    new THREE.MeshPhongMaterial({ color: 0xcccccc }),
+    new THREE.MeshPhongMaterial({
       map: textureBack,
       bumpMap: bumpBack,
       bumpScale: 0.1,
@@ -86,7 +96,7 @@ function main() {
       roughness: 0.5,
       metalness: 0.5,
     }),
-    new THREE.MeshStandardMaterial({
+    new THREE.MeshPhongMaterial({
       map: textureFront,
       bumpMap: bumpFront,
       bumpScale: 0.1,
@@ -147,16 +157,17 @@ function main() {
   controls.touches = {
     ONE: THREE.TOUCH.ROTATE,
   };
-  controls.enableZoom = false;
+  // controls.enableZoom = false;
 
   controls.minPolarAngle = Math.PI / 2;
   controls.maxPolarAngle = Math.PI / 2;
-  function onDocumentMouseDown(event) {
+
+  function onDocumentMouseDown() {
     console.log("mouse down");
     start = new Date();
   }
 
-  function onDocumentMouseUp(event) {
+  function onDocumentMouseUp() {
     console.log("mouse up");
     end = new Date();
     delta = (end - start) / 1000.0;
